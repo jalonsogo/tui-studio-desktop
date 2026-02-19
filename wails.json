@@ -3,9 +3,9 @@
   "name": "TUIStudio",
   "outputfilename": "TUIStudio",
   "frontend:install": "npm install",
-  "frontend:build": "node scripts/build-web.mjs",
+  "frontend:build": "npx vite build",
   "frontend:dev:serverUrl": "http://localhost:5173",
-  "frontend:dir": "web/dist",
+  "frontend:dir": "web",
   "author": {
     "name": "Javier Alonso",
     "email": ""

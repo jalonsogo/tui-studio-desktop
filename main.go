@@ -56,9 +56,7 @@ func main() {
 			// Inject the native bridge before any user interaction is possible.
 			// Overrides showSaveFilePicker / showOpenFilePicker / showDirectoryPicker
 			// to route through Go IPC methods exposed as window.go.main.App.*
-			if err := runtime.WindowExecJS(ctx, bridgeJS); err != nil {
-				_, _ = os.Stderr.WriteString("bridge inject error: " + err.Error() + "\n")
-			}
+			runtime.WindowExecJS(ctx, bridgeJS)
 		},
 		OnShutdown: func(_ context.Context) {},
 		Bind: []interface{}{
@@ -80,7 +78,6 @@ func main() {
 			DisableWindowIcon:    false,
 			DisablePinchZoom:     true,
 			IsZoomControlEnabled: false,
-			UseImmersiveDarkMode: true,
 			Theme:                windows.Dark,
 			CustomTheme: &windows.ThemeSettings{
 				DarkModeTitleBar:   0x111111,
