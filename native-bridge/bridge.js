@@ -18,6 +18,21 @@
 (function installNativeBridge() {
   if (typeof window.go === 'undefined') return;
 
+  // Disable text selection globally — desktop apps should not behave like web pages.
+  // Input elements are excluded so typing still works normally.
+  const style = document.createElement('style');
+  style.textContent = `
+    *, *::before, *::after {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    input, textarea, [contenteditable] {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+  `;
+  document.head.appendChild(style);
+
   const go = window.go.main.App;
 
   /* ------------------------------------------------------------------ */
