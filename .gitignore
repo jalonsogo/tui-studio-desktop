@@ -1,0 +1,24 @@
+# Wails build output
+build/bin/
+build/darwin/
+build/windows/
+build/linux/
+
+# Go
+*.exe
+*.test
+vendor/
+
+# Node (web submodule manages its own .gitignore)
+node_modules/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Wails generated frontend bindings (committed only if you want to check them in)
+frontend/wailsjs/

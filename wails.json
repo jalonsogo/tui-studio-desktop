@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "TUIStudio",
+  "outputfilename": "TUIStudio",
+  "frontend:install": "npm install",
+  "frontend:build": "node scripts/build-web.mjs",
+  "frontend:dev:serverUrl": "http://localhost:5173",
+  "frontend:dir": "web/dist",
+  "author": {
+    "name": "Javier Alonso",
+    "email": ""
+  }
+}
