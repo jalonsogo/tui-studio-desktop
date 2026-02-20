@@ -39,7 +39,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.23'
           cache: true
 
       - name: Set up Node.js
@@ -60,13 +60,20 @@ jobs:
             librsvg2-dev \
             nsis
 
-      - name: Build with Wails
-        uses: dAppServer/wails-build-action@v3
-        with:
-          build-name: TUIStudio
-          build-platform: ${{ matrix.platform }}
-          package: true
-          sign-macos: false
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
+
+      - name: Build
+        run: wails build -platform ${{ matrix.platform }} -clean
+
+      - name: Package macOS DMG
+        if: runner.os == 'macOS'
+        run: |
+          hdiutil create \
+            -volname TUIStudio \
+            -srcfolder build/bin/TUIStudio.app \
+            -ov -format UDZO \
+            build/bin/TUIStudio.dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
