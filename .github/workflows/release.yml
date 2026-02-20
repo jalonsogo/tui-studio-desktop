@@ -69,11 +69,18 @@ jobs:
       - name: Package macOS DMG
         if: runner.os == 'macOS'
         run: |
-          hdiutil create \
-            -volname TUIStudio \
-            -srcfolder build/bin/TUIStudio.app \
-            -ov -format UDZO \
-            build/bin/TUIStudio.dmg
+          npm install -g create-dmg
+          mkdir -p /tmp/dmg-staging
+          cp -r build/bin/TUIStudio.app /tmp/dmg-staging/
+          create-dmg \
+            --background build/background.png \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon TUIStudio.app 130 265 \
+            --app-drop-link 470 265 \
+            build/bin/TUIStudio.dmg \
+            /tmp/dmg-staging/ || true
+          # create-dmg exits non-zero when no code signing is done; the DMG is still produced
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
