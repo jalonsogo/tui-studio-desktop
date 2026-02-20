@@ -78,7 +78,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TUIStudio-${{ matrix.platform }}
+          name: TUIStudio-${{ matrix.os }}
           path: build/bin/${{ matrix.artifact }}
           if-no-files-found: warn
 
