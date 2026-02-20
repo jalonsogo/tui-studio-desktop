@@ -2,7 +2,7 @@ WAILS := $(shell go env GOPATH)/bin/wails
 APP   := build/bin/TUIStudio.app
 DMG   := build/bin/TUIStudio.dmg
 
-.PHONY: dev build package clean
+.PHONY: dev build package clean studio
 
 ## Start Vite dev server + Wails window (hot reload)
 dev:
@@ -31,3 +31,7 @@ package: build
 ## Remove build output
 clean:
 	rm -rf build/bin
+
+## Interactive action picker (requires huh)
+studio:
+	go run ./cmd/studio
