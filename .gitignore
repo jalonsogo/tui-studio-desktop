@@ -8,6 +8,7 @@ build/linux/
 *.exe
 *.test
 vendor/
+/studio
 
 # Node (web submodule manages its own .gitignore)
 node_modules/

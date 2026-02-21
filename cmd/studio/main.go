@@ -10,15 +10,17 @@ import (
 
 type action struct {
 	label string
-	make  string
+	key   string
 	desc  string
+	cmd   []string // if set, run directly instead of make
 }
 
 var actions = []action{
-	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)"},
-	{"Build", "build", "Compile the .app bundle"},
-	{"Package", "package", "Compile the .app bundle and wrap in a .dmg"},
-	{"Clean", "clean", "Remove build output"},
+	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)", nil},
+	{"Build", "build", "Compile the .app bundle", nil},
+	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil},
+	{"Clean", "clean", "Remove build output", nil},
+	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[].assets[] | {name, download_count}'"}},
 }
 
 func main() {
@@ -26,7 +28,7 @@ func main() {
 
 	opts := make([]huh.Option[string], len(actions))
 	for i, a := range actions {
-		opts[i] = huh.NewOption(fmt.Sprintf("%-10s %s", a.label, a.desc), a.make)
+		opts[i] = huh.NewOption(fmt.Sprintf("%-10s %s", a.label, a.desc), a.key)
 	}
 
 	form := huh.NewForm(
@@ -42,9 +44,23 @@ func main() {
 		os.Exit(0) // user cancelled
 	}
 
-	fmt.Printf("\n→ make %s\n\n", choice)
+	var selected action
+	for _, a := range actions {
+		if a.key == choice {
+			selected = a
+			break
+		}
+	}
 
-	cmd := exec.Command("make", choice)
+	var cmd *exec.Cmd
+	if selected.cmd != nil {
+		fmt.Printf("\n→ %s\n\n", selected.desc)
+		cmd = exec.Command(selected.cmd[0], selected.cmd[1:]...)
+	} else {
+		fmt.Printf("\n→ make %s\n\n", choice)
+		cmd = exec.Command("make", choice)
+	}
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
