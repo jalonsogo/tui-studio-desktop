@@ -5,7 +5,10 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type action struct {
@@ -22,6 +25,66 @@ var actions = []action{
 	{"Clean", "clean", "Remove build output", nil},
 	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}'"}},
 }
+
+// — spinner TUI —
+
+type doneMsg struct {
+	output []byte
+	err    error
+}
+
+type spinnerModel struct {
+	spinner spinner.Model
+	label   string
+	output  string
+	cmdErr  error
+}
+
+func (m spinnerModel) Init() tea.Cmd {
+	return m.spinner.Tick
+}
+
+func (m spinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case doneMsg:
+		m.output = string(msg.output)
+		m.cmdErr = msg.err
+		return m, tea.Quit
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	}
+	return m, nil
+}
+
+func (m spinnerModel) View() string {
+	return fmt.Sprintf("\n  %s %s\n", m.spinner.View(), m.label)
+}
+
+func runWithSpinner(label string, cmdArgs []string) ([]byte, error) {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
+	p := tea.NewProgram(spinnerModel{spinner: s, label: label})
+
+	go func() {
+		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+		out, err := cmd.CombinedOutput()
+		p.Send(doneMsg{output: out, err: err})
+	}()
+
+	final, err := p.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	fm := final.(spinnerModel)
+	return []byte(fm.output), fm.cmdErr
+}
+
+// — main —
 
 func main() {
 	var choice string
@@ -52,15 +115,19 @@ func main() {
 		}
 	}
 
-	var cmd *exec.Cmd
 	if selected.cmd != nil {
-		fmt.Printf("\n→ %s\n\n", selected.desc)
-		cmd = exec.Command(selected.cmd[0], selected.cmd[1:]...)
-	} else {
-		fmt.Printf("\n→ make %s\n\n", choice)
-		cmd = exec.Command("make", choice)
+		fmt.Printf("\n→ %s\n", selected.desc)
+		out, err := runWithSpinner("Fetching...", selected.cmd)
+		fmt.Println()
+		fmt.Print(string(out))
+		if err != nil {
+			os.Exit(1)
+		}
+		return
 	}
 
+	fmt.Printf("\n→ make %s\n\n", choice)
+	cmd := exec.Command("make", choice)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
