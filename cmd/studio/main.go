@@ -12,18 +12,19 @@ import (
 )
 
 type action struct {
-	label string
-	key   string
-	desc  string
-	cmd   []string // if set, run directly instead of make
+	label      string
+	key        string
+	desc       string
+	cmd        []string // if set, run directly instead of make
+	useSpinner bool
 }
 
 var actions = []action{
-	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)", nil},
-	{"Build", "build", "Compile the .app bundle", nil},
-	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil},
-	{"Clean", "clean", "Remove build output", nil},
-	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}'"}},
+	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)", nil, false},
+	{"Build", "build", "Compile the .app bundle", nil, true},
+	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil, true},
+	{"Clean", "clean", "Remove build output", nil, false},
+	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}'"},  false},
 }
 
 // — spinner TUI —
@@ -115,9 +116,14 @@ func main() {
 		}
 	}
 
-	if selected.cmd != nil {
+	cmdArgs := selected.cmd
+	if cmdArgs == nil {
+		cmdArgs = []string{"make", selected.key}
+	}
+
+	if selected.useSpinner || selected.cmd != nil {
 		fmt.Printf("\n→ %s\n", selected.desc)
-		out, err := runWithSpinner("Fetching...", selected.cmd)
+		out, err := runWithSpinner(selected.desc+"...", cmdArgs)
 		fmt.Println()
 		fmt.Print(string(out))
 		if err != nil {
@@ -127,7 +133,7 @@ func main() {
 	}
 
 	fmt.Printf("\n→ make %s\n\n", choice)
-	cmd := exec.Command("make", choice)
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
