@@ -20,7 +20,7 @@ var actions = []action{
 	{"Build", "build", "Compile the .app bundle", nil},
 	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil},
 	{"Clean", "clean", "Remove build output", nil},
-	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[].assets[] | {name, download_count}'"}},
+	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}'"}},
 }
 
 func main() {
