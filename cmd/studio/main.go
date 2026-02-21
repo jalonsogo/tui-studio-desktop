@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,14 +19,71 @@ type action struct {
 	desc       string
 	cmd        []string // if set, run directly instead of make
 	useSpinner bool
+	render     func([]byte) // if set, called with raw output instead of printing
 }
 
 var actions = []action{
-	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)", nil, false},
-	{"Build", "build", "Compile the .app bundle", nil, true},
-	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil, true},
-	{"Clean", "clean", "Remove build output", nil, false},
-	{"Downloads", "downloads", "Show release download counts", []string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}'"},  false},
+	{"Dev", "dev", "Start Vite dev server + Wails window (hot reload)", nil, false, nil},
+	{"Build", "build", "Compile the .app bundle", nil, true, nil},
+	{"Package", "package", "Compile the .app bundle and wrap in a .dmg", nil, true, nil},
+	{"Clean", "clean", "Remove build output", nil, false, nil},
+	{"Downloads", "downloads", "Show release download counts",
+		[]string{"sh", "-c", "gh api repos/jalonsogo/tui-studio-desktop/releases | jq '[.[] | {tag: .tag_name, published: .published_at[:10], assets: [.assets[] | {name, download_count}]}]'"},
+		false, renderDownloads},
+}
+
+// — downloads renderer —
+
+type releaseAsset struct {
+	Name          string `json:"name"`
+	DownloadCount int    `json:"download_count"`
+}
+
+type releaseInfo struct {
+	Tag       string         `json:"tag"`
+	Published string         `json:"published"`
+	Assets    []releaseAsset `json:"assets"`
+}
+
+func renderDownloads(raw []byte) {
+	var releases []releaseInfo
+	if err := json.Unmarshal(raw, &releases); err != nil {
+		fmt.Print(string(raw))
+		return
+	}
+
+	tagStyle    := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
+	dateStyle   := lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+	nameStyle   := lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+	countStyle  := lipgloss.NewStyle().Foreground(lipgloss.Color("86")).Bold(true)
+	ruleStyle   := lipgloss.NewStyle().Foreground(lipgloss.Color("238"))
+	labelStyle  := lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+	headerStyle := lipgloss.NewStyle().Bold(true)
+
+	const width = 54
+	fmt.Println()
+	fmt.Println("  " + headerStyle.Render("Release Downloads"))
+	fmt.Println("  " + ruleStyle.Render(strings.Repeat("─", width)))
+
+	total := 0
+	for _, r := range releases {
+		for _, a := range r.Assets {
+			total += a.DownloadCount
+			fmt.Printf("  %-18s  %s  %-20s  %s\n",
+				tagStyle.Render(r.Tag),
+				dateStyle.Render(r.Published),
+				nameStyle.Render(a.Name),
+				countStyle.Render(fmt.Sprintf("%d", a.DownloadCount)),
+			)
+		}
+	}
+
+	fmt.Println("  " + ruleStyle.Render(strings.Repeat("─", width)))
+	fmt.Printf("  %-44s%s\n",
+		labelStyle.Render("Total"),
+		countStyle.Render(fmt.Sprintf("%d", total)),
+	)
+	fmt.Println()
 }
 
 // — spinner TUI —
@@ -124,10 +183,15 @@ func main() {
 	if selected.useSpinner || selected.cmd != nil {
 		fmt.Printf("\n→ %s\n", selected.desc)
 		out, err := runWithSpinner(selected.desc+"...", cmdArgs)
-		fmt.Println()
-		fmt.Print(string(out))
 		if err != nil {
+			fmt.Print(string(out))
 			os.Exit(1)
+		}
+		if selected.render != nil {
+			selected.render(out)
+		} else {
+			fmt.Println()
+			fmt.Print(string(out))
 		}
 		return
 	}
