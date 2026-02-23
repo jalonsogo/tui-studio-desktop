@@ -23,9 +23,6 @@ jobs:
             artifact: TUIStudio-Setup.exe
             build_flags: -nsis
 
-          - os: ubuntu-22.04
-            platform: linux/amd64
-            artifact: TUIStudio-amd64.deb
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.platform }})
@@ -50,16 +47,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.0-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            nsis
 
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
