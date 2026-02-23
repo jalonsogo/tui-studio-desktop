@@ -20,7 +20,8 @@ jobs:
 
           - os: windows-latest
             platform: windows/amd64
-            artifact: TUIStudio.exe
+            artifact: TUIStudio-Setup.exe
+            build_flags: -nsis
 
           - os: ubuntu-22.04
             platform: linux/amd64
@@ -60,12 +61,21 @@ jobs:
             librsvg2-dev \
             nsis
 
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install nsis --no-progress -y
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
 
       - name: Build
         run: wails build -platform ${{ matrix.platform }} -clean ${{ matrix.build_flags }}
+
+      - name: Rename Windows installer
+        if: runner.os == 'Windows'
+        run: Rename-Item build\bin\TUIStudio-amd64-installer.exe TUIStudio-Setup.exe
 
       - name: Package macOS DMG
         if: runner.os == 'macOS'
