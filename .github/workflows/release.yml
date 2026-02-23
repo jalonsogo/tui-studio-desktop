@@ -20,8 +20,7 @@ jobs:
 
           - os: windows-latest
             platform: windows/amd64
-            artifact: TUIStudio-amd64-installer.exe
-            build_flags: -nsis
+            artifact: TUIStudio.exe
 
           - os: ubuntu-22.04
             platform: linux/amd64
@@ -61,11 +60,6 @@ jobs:
             librsvg2-dev \
             nsis
 
-      - name: Install Windows dependencies
-        if: runner.os == 'Windows'
-        run: |
-          choco install nsis --no-progress -y
-          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
