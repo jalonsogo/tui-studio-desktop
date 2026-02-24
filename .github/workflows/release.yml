@@ -58,6 +58,8 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
 
       - name: Build
+        env:
+          VITE_APP_VERSION: ${{ github.ref_name }}
         run: wails build -platform ${{ matrix.platform }} -clean ${{ matrix.build_flags }}
 
       - name: Rename Windows installer
