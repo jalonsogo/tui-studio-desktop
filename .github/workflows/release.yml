@@ -20,7 +20,7 @@ jobs:
 
           - os: windows-latest
             platform: windows/amd64
-            artifact: TUIStudio-Setup.exe
+            artifact: TUIStudio.exe
             build_flags: -nsis
 
 
@@ -64,7 +64,9 @@ jobs:
 
       - name: Rename Windows installer
         if: runner.os == 'Windows'
-        run: Rename-Item build\bin\TUIStudio-amd64-installer.exe TUIStudio-Setup.exe
+        run: |
+          Remove-Item build\bin\TUIStudio.exe -ErrorAction SilentlyContinue
+          Rename-Item build\bin\TUIStudio-amd64-installer.exe TUIStudio.exe
 
       - name: Package macOS DMG
         if: runner.os == 'macOS'
